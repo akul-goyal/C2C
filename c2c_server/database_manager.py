@@ -48,7 +48,12 @@ class Database(object):
     #     info.append(json_package["car_color"])
     #     info.append(json_package["name"])
     #     return info
-
+    def get_messages_from_mailbox(self, json_package):
+        if json_package["plate_num"] in self.message_profile:
+            lis = self.message_profile[json_package["plate_num"]]["message"]
+            return lis
+        else:
+            return None
     # insert list of info into locations
     def save_json_to_locations(self, json_package):
         info =  self.format_location_info(json_package)
@@ -111,60 +116,90 @@ class Database(object):
         nameplate=json_package["plate_num"]
         self.location_profile[nameplate]={}
         for elements in json_package:
-            self.location_profile[nameplate][elements]=elements
+
+            self.location_profile[nameplate][elements]=json_package[elements]
 
 
     # load from messages
     def load_some_messages(self, json_package):
-        print json_package
-        print "_\n\n\n"
-        nameplate = json_package["sender_plate_num"]
+        nameplate = json_package["target_plate_num"]
+
         value = self.message_profile.get(nameplate)
         if value == None:
             self.message_profile[nameplate]={}
-        for elements in json_package:
 
-            if elements not in self.message_profile[nameplate]:
-                self.message_profile[nameplate][elements]=[]
-                self.message_profile[nameplate][elements].append(elements)
-            else:
-                self.message_profile[nameplate][elements]=self.message_profile[nameplate][elements].append(elements)
+        value = self.message_profile.get('message')
+        if value == None:
+            self.message_profile[nameplate]['message']=[json_package['message']]
+        else:
+            self.message_profile[nameplate]['message']=self.message_profile[nameplate]['message'].append(json_package['message'])
+
 
 
     def load_message_everyone(self, json_package):
         for nameplate in self.location_profile:
-            if ((haversine(float(json_package["longitude"]),float(json_package["latitude"]),
-            float(nameplate["longitude"],float(nameplate["latitude"])))) < 61
-            and (floor_time(json_package["time"])) in floor_time(nameplate["send_time"])):
+            x1=float(json_package["longitude"])
+            x2=float(json_package["latitude"])
+            y1=float(self.location_profile[nameplate]["longitude"])
+            y2=float(self.location_profile[nameplate]["latitude"])
+            z1=(floor_time(json_package["time"]))
+            z2=floor_time(self.location_profile[nameplate]["send_time"])
+            if haversine(x1,x2,y1,y2)< 9000 and  z1==z2:
                 if self.message_profile[nameplate["plate_num"]]==None:
                     self.message_profile[nameplate["plate_num"]]=[]
                     self.message_profile[nameplate["plate_num"]]= self.message_profile[nameplate["plate_num"]].append(json_package["message"])
                 else:
                     self.message_profile[nameplate["plate_num"]]= self.message_profile[nameplate["plate_num"]].append(json_package["message"])
 
-        sys.exit()
 
-    def floor_time(time):
-        timeS=int(time[-5:-3])
+
+    def floor_time(self, time):
+        timeS=int(str(time[-5:-3]))
+
         if timeS>=30:
-            timeM=int(time[-8:-6])
+            timeM=int(str(time[-8:-6]))
             if timeM<59:
                 timeM=timeM+1
+
                 return time[0:-8] + str(timeM) + time[-6:len(time)]
             else:
-                timeH=time[-11:-9]
+                timeH=str(time[-11:-9])
                 if ' ' in timeH:
                     timeH=timeH[1:2]
                     flag=True
                 timeH=int(timeH)
                 timeH=timeH+1
                 if flag:
+
                     return time[0:-10] + str(timeH)+':'+ str(00) + time[-6:len(time)]
                 else:
+
                     return time[0:-11] + str(timeH)+':'+ str(00) + time[-6:len(time)]
+        else:
+            return time[0:-5] + str(00)+time[-3:len(time)]
+
+    def haversine(self, longitude1, latitude1, longitude2, latitude2):
+        lon1 = longitude1
+        lat1 = latitude1
+        lon2 = longitude1
+        lat2 = latitude2
+
+        R = 6371000  # radius of Earth in meters
+        phi_1 = math.radians(lat1)
+        phi_2 = math.radians(lat2)
+
+        delta_phi = math.radians(lat2 - lat1)
+        delta_lambda = math.radians(lon2 - lon1)
+
+        a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi_1) * math.cos(phi_2) * math.sin(delta_lambda / 2.0) ** 2
+
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+        meters = R * c  # output distance in meters
+        return meters
 
 
-    def find_name_plate(self, color, cartype, longitude, latitude, nearby_cars, time):
+    def find_name_plate(self, color, cartype, longitude, latitude, nearby_cars, time, num_plate):
 
         if color is None:
             return None
@@ -177,37 +212,30 @@ class Database(object):
         # calc3=abs(float(latitude)-float(nameplate["latitude"]))<0.001352
         # calc4=abs(float(longitude)-float(nameplate["longitude"]))<.000027
 
-        for nameplate in nearby_cars:
-            if cartype in self.location_profile[nameplate]:
-                if color in self.location_profile[nameplate]:
-                    return nameplate["plate_num"]
+        if nearby_cars is None:
+            for nameplate in self.location_profile:
+                if nameplate == num_plate:
+                    continue
+                distance = self.haversine(float(longitude),float(latitude),
+                float(self.location_profile[nameplate]["longitude"]),float(self.location_profile[nameplate]["latitude"]))
 
-        for nameplate in self.location_profile:
-            if ((haversine(float(longitude),float(latitude),float(nameplate["longitude"],
-            float(nameplate["latitude"])))) < 61 and floor_time(time) in floor_time(nameplate["send_time"])):
-                    if cartype in nameplate and color in nameplate:
-                                return nameplate["plate_num"]
-        return None
+                time=self.floor_time(time)
+                time2=self.floor_time(self.location_profile[nameplate]["send_time"])
+                if distance<61 and time==time2:
 
-        def haversine(self, longitude1, latitude1, longitude2, latitude2):
-            lon1 = longitude1
-            lat1 = latitude1
-            lon2 = longitude1
-            lat2 = latitude2
+                        if cartype==self.location_profile[nameplate]['car_type'] and color==self.location_profile[nameplate]['car_color']:
 
-            R = 6371000  # radius of Earth in meters
-            phi_1 = math.radians(lat1)
-            phi_2 = math.radians(lat2)
+                                    return self.location_profile[nameplate]["plate_num"]
+        else:
+            for nameplate in nearby_cars:
+                if cartype in self.location_profile[nameplate]:
+                    if color in self.location_profile[nameplate]:
+                        return self.location_profile[nameplate]["plate_num"]
 
-            delta_phi = math.radians(lat2 - lat1)
-            delta_lambda = math.radians(lon2 - lon1)
 
-            a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi_1) * math.cos(phi_2) * math.sin(delta_lambda / 2.0) ** 2
 
-            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-            meters = R * c  # output distance in meters
-            return meters
+
 
 
 
@@ -219,7 +247,7 @@ class Database(object):
         self.create_user_table()
         self.create_locations_table()
         self.create_messages_table()
-        print ("Success!")
+
 
     # create user table for storing info about people and their cars
     def create_user_table(self):
@@ -228,7 +256,7 @@ class Database(object):
         car_type TEXT,
         car_color TEXT,
         name TEXT);''')
-        print ("Created user_profiles table")
+
 
     # create locations table to store location updates
     def create_locations_table(self):
@@ -240,7 +268,7 @@ class Database(object):
         latitude REAL,
         send_time TEXT,
         nearby_cars TEXT);''')
-        print ("Created locations table")
+
 
     # create messages table to store sender and target car info
     def create_messages_table(self):
@@ -256,4 +284,3 @@ class Database(object):
         latitude REAL,
         send_time TEXT,
         nearby_cars TEXT);''')
-        print ("Created messages table")
