@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">CarTalk</string>
+
+    <!--View Profile Strings-->
+    <string name="username">Name: </string>
+    <string name="plate_num">License Plate Number: </string>
+    <string name="car_type">Car Type: </string>
+    <string name="car_color">Car Color: </string>
+    <string name="edit_button">Edit Profile</string>
+    <string name="save_button">Save</string>
+</resources>

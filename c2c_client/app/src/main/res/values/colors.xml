@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#162429</color>
+    <color name="colorPrimaryDark">#162429</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <!-- UI -->
+    <color name="background1">#243B42</color>
+    <color name="background2">#162429</color>
+    <color name="button">#162429</color>
+
+    <!-- TEXT -->
+    <color name="t1">#BABABA</color>
+    <color name="t2">#9C9C9C</color>
+    <color name="t3">#7A7A7A</color>
+    <color name="t4">#525252</color>
+</resources>
