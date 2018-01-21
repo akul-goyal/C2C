@@ -24,7 +24,7 @@ public class ServerConnection {
 
     //---Variables----------------------------------------------------------------------------------
 
-    private final String serverPath = "http://0e98b428.ngrok.io" + "/";
+    private final String serverPath = "http://18be6be5.ngrok.io" + "/";
     private String serverResponse = "";
 
 
@@ -39,7 +39,7 @@ public class ServerConnection {
     // - sendProfileToServer
     // - sendLocationToServer
     // - sendMessageToServer
-    void sendInfoToServer(final JSONObject info, final String finalServerPath) {
+    String sendInfoToServer(final JSONObject info, final String finalServerPath) {
         // spawn a new thread for request to run on
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -58,6 +58,8 @@ public class ServerConnection {
             System.out.println("Thread issues in SendInfoToServer()");
         }
 
+        return serverResponse;
+
     }
 
     // calls sendInfoToServer with url /profile
@@ -73,6 +75,10 @@ public class ServerConnection {
     // sends info to server
     void sendMessageToServer(final JSONObject info) {
         sendInfoToServer(info, serverPath + "send_message");
+    }
+
+    String sendMessageRequestToServer(final JSONObject info) {
+        return sendInfoToServer(info, serverPath + "get_message");
     }
 
 

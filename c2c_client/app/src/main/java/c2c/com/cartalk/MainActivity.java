@@ -1,7 +1,11 @@
 package c2c.com.cartalk;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
 import android.os.Handler;
 import android.speech.RecognizerIntent;
@@ -43,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     FrameLayout viewContainer;
     Button editInfoButton;
     Button sendMessage;
+    Button getMessage;
     boolean editProfileState = false;
     TextView name;
     TextView plate;
@@ -61,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     // To Server
     JSONObject locationPackage;
     JSONObject messagePackage;
+    JSONObject messageRequestPackage;
 
     // Location
     LocationManager locationHelper;
@@ -71,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     ServerConnection server;
     MemoryManager memory;
     public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
+
+    ArrayList<String> nearbyCars = new ArrayList<>();
 
 
     //---Set Up-------------------------------------------------------------------------------------
@@ -103,6 +111,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         // set up timer to run location pings
         setUpLocationPingLoop();
+
+        //
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        this.registerReceiver(mReceiver, filter);
     }
 
 
@@ -147,6 +160,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onClick(View view) {
                 startVoiceRecognitionActivity();
+            }
+        });
+
+        getMessage = (Button)findViewById(R.id.get_messages);
+        getMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setUpMessageRequest();
+                String response = server.sendMessageRequestToServer(messageRequestPackage);
             }
         });
 
@@ -230,6 +252,39 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         editProfileState = !editProfileState;
     }
 
+    //---BlueTooth----------------------------------------------------------------------------------
+
+    BluetoothAdapter mBluetoothAdapter = null;
+
+
+    void changeDeviceName() {
+        String[] info = memory.getProfileInfo(this);
+        mBluetoothAdapter.setName(info[1]);
+    }
+
+    public String getLocalBluetoothName() {
+        if (mBluetoothAdapter == null) {
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        }
+        String name = mBluetoothAdapter.getName();
+        if (name==null) {
+            System.out.println("Name is null!");
+            name = mBluetoothAdapter.getAddress();
+        }
+        return name;
+    }
+
+    // discover devices
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                nearbyCars.add(deviceName);
+            }
+        }
+    };
 
     //---Voice--------------------------------------------------------------------------------------
 
@@ -256,6 +311,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
      * Also functions that get that info
      */
 
+    // set up messages_request
+    void setUpMessageRequest() {
+        String[] userInfo = memory.getProfileInfo(this);
+        messageRequestPackage = new JSONObject();
+        try {
+            messageRequestPackage.put("plate_num", userInfo[1]);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        changeDeviceName();
+    }
     // gets everything ready in locationMap
     /**
      * plate_num
@@ -279,7 +346,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             locationPackage.put("longitude", longitude);
             locationPackage.put("latitude", latitude);
             locationPackage.put("send_time", getTime());
-            locationPackage.put("nearby_cars", "WORKING ON THIS");
+            locationPackage.put("nearby_cars", nearbyCars.toString());
 
         } catch (JSONException e) {
             // TODO Auto-generated catch block
@@ -317,7 +384,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             messagePackage.put("longitude", longitude);
             messagePackage.put("latitude", latitude);
             messagePackage.put("send_time", getTime());
-            messagePackage.put("nearby_cars", "WORKING ON THIS");
+            messagePackage.put("nearby_cars", nearbyCars.toString());
 
         } catch (JSONException e) {
             // TODO Auto-generated catch block
