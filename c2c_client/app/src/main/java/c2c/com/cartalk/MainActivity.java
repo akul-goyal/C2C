@@ -132,6 +132,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onClick(View view) {
                 switchEditProfileView();
+
+                /*
+                toast("sent!");
+                setUpLocationPackageForServer();
+                server.sendLocationToServer(locationPackage);
+                */
+
+                toast("message sent");
+                setUpMessagePackage();
+                server.sendMessageToServer(messagePackage);
             }
         });
 
@@ -271,6 +281,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         getLocation();
         String[] userInfo = memory.getProfileInfo(this);
 
+        message = "TEST MESSAGE";
         messagePackage =  new JSONObject();
         try {
             messagePackage.put("message", message);

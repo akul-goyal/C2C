@@ -14,12 +14,14 @@
 from flask import Flask
 from flask import request
 app = Flask(__name__)
+from werkzeug.datastructures import ImmutableMultiDict
 
 from database_manager import Database
 db = Database()
 
 import sys
 import math
+import json
 
 
 #---REST API Routes-------------------------------------------------------------
@@ -32,10 +34,24 @@ import math
 
 # location
 
-@app.route('/update_location', methods = ['POST'])
+@app.route('/update_location', methods = ['GET', 'POST'])
 def update_location():
-    db.save_json_to_locations(dict(request.form))
-    db.load_in_location(dict(request.form))
+
+    # convert info into usable format
+    info = 0
+    server_dict = request.form.to_dict(flat=False)
+    for key, values in server_dict.iteritems():
+        info = key
+    info = json.loads(info)
+
+    print info
+    print "-"
+
+
+    db.save_json_to_locations(info)
+    db.load_in_location(info)
+
+    return "null"
 
 
 # messages
@@ -43,7 +59,20 @@ flag=False
 flag_error=False
 @app.route('/send_message', methods = ['POST'])
 def send_message():
-    info = check_everyone_present(dict(request.form))
+
+    # convert info into usable format
+    request_info = 0
+    server_dict = request.form.to_dict(flat=False)
+    for key, values in server_dict.iteritems():
+        request_info = key
+    request_info = json.loads(request_info)
+
+    print request_info
+    print "-"
+    #
+
+    info = check_everyone_present(request_info)
+
     if flag_error:
         error_message="Car not found, please provide more information"
         return error_message
@@ -53,11 +82,16 @@ def send_message():
     else:
         db.load_message_everyone(info)
 
+    return "null"
+
+
 @app.route ('/recieve_message', methods=['POST'])
 def recieve_message():
     info = (dict(request.form))['nameplate'] #this might not be right. Dont know how else to parse the request.
     messages = db.get_messages_from_mailbox(info)
-    return messages
+
+    return "NULL"
+    #return messages
 
 
 
@@ -67,6 +101,7 @@ def recieve_message():
 #---Helpful Functions-----------------------------------------------------------
 
 def check_everyone_present(message):
+    print message
     if 'everyone' in message["message"]:
         return process_message_for_everyone(message)
         flag=True

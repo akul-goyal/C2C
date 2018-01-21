@@ -15,8 +15,8 @@ import math
 
 # Strings that contain sqlite execution instructions
 # insert_user = "INSERT OR REPLACE INTO user_profiles VALUES (?, ?, ?, ?)"
-insert_location = "INSERT INTO locations VALUES (?, ?, ?, ?, ?, ?)"
-insert_message = "INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+insert_location = "INSERT INTO locations VALUES (?, ?, ?, ?, ?, ?, ?)"
+insert_message = "INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 # load_users = "SELECT * FROM user_profiles"
 load_locations = "SELECT * FROM locations"
 load_messages = "SELECT * FROM messages"
@@ -26,6 +26,8 @@ class Database(object):
     # open up database
     def __init__(self):
         self.database  = sqlite3.connect("cartalk.db")
+        self.location_profile={}
+        self.message_profile={}
 
     # automatically close database when done
     def __del__(self):
@@ -87,8 +89,7 @@ class Database(object):
 
     #---Helper--------------------------------------------------------------------
     # user_profile={}
-    location_profile={}
-    message_profile={}
+
     # # load from user_profiles
     # def load_all_user_profiles(self):
     #     result = self.database.execute(load_users)
@@ -108,36 +109,38 @@ class Database(object):
 
     def load_in_location(self, json_package):
         nameplate=json_package["plate_num"]
-        location_profile[nameplate]={}
+        self.location_profile[nameplate]={}
         for elements in json_package:
-            location_profile[nameplate][element]=elements
+            self.location_profile[nameplate][elements]=elements
 
-        sys.exit()
 
     # load from messages
     def load_some_messages(self, json_package):
-        nameplate=json_package["plate_num"]
-        if message_profile[nameplate] == None:
-            message_profile[nameplate]={}
+        print json_package
+        print "_\n\n\n"
+        nameplate = json_package["sender_plate_num"]
+        value = self.message_profile.get(nameplate)
+        if value == None:
+            self.message_profile[nameplate]={}
         for elements in json_package:
-            if message_profile[nameplate][element]==None:
-                message_profile[nameplate][element]=[]
-                message_profile[nameplate][element].append(element)
-            else:
-                message_profile[nameplate][element]=message_profile[nameplate][element].append(elements)
 
-        sys.exit()
+            if elements not in self.message_profile[nameplate]:
+                self.message_profile[nameplate][elements]=[]
+                self.message_profile[nameplate][elements].append(elements)
+            else:
+                self.message_profile[nameplate][elements]=self.message_profile[nameplate][elements].append(elements)
+
 
     def load_message_everyone(self, json_package):
-        for nameplate in location_profile:
+        for nameplate in self.location_profile:
             if ((haversine(float(json_package["longitude"]),float(json_package["latitude"]),
             float(nameplate["longitude"],float(nameplate["latitude"])))) < 61
             and (floor_time(json_package["time"])) in floor_time(nameplate["send_time"])):
-                if message_profile[nameplate["plate_num"]]==None:
-                    message_profile[nameplate["plate_num"]]=[]
-                    message_profile[nameplate["plate_num"]]= message_profile[nameplate["plate_num"]].append(json_package["message"])
+                if self.message_profile[nameplate["plate_num"]]==None:
+                    self.message_profile[nameplate["plate_num"]]=[]
+                    self.message_profile[nameplate["plate_num"]]= self.message_profile[nameplate["plate_num"]].append(json_package["message"])
                 else:
-                    message_profile[nameplate["plate_num"]]= message_profile[nameplate["plate_num"]].append(json_package["message"])
+                    self.message_profile[nameplate["plate_num"]]= self.message_profile[nameplate["plate_num"]].append(json_package["message"])
 
         sys.exit()
 
@@ -175,11 +178,11 @@ class Database(object):
         # calc4=abs(float(longitude)-float(nameplate["longitude"]))<.000027
 
         for nameplate in nearby_cars:
-            if cartype in location_profile[nameplate]:
-                if color in location_profile[nameplate]:
+            if cartype in self.location_profile[nameplate]:
+                if color in self.location_profile[nameplate]:
                     return nameplate["plate_num"]
 
-        for nameplate in location_profile:
+        for nameplate in self.location_profile:
             if ((haversine(float(longitude),float(latitude),float(nameplate["longitude"],
             float(nameplate["latitude"])))) < 61 and floor_time(time) in floor_time(nameplate["send_time"])):
                     if cartype in nameplate and color in nameplate:

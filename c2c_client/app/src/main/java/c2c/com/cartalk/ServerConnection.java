@@ -24,7 +24,7 @@ public class ServerConnection {
 
     //---Variables----------------------------------------------------------------------------------
 
-    private final String serverPath = "http://14de7997.ngrok.io/";
+    private final String serverPath = "http://0e98b428.ngrok.io" + "/";
     private String serverResponse = "";
 
 
