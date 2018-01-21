@@ -99,12 +99,11 @@ def process_message_info(message):
                 message["target_car_color"] = color
                 break
 
-    message["target_plate_num"] =
-    db.find_name_plate(message["target_car_color"], message["target_car_type"]
+    message["target_plate_num"] =db.find_name_plate(message["target_car_color"], message["target_car_type"],
     message["longitude"], message["latitude"], message["nearby_cars"],
     message["send_time"])
 
-    if message["target_plate_num"] = None:
+    if message["target_plate_num"] == None:
         flag_error=True
     if not flag_error:
         message["message"] = check_message_appropriate(message["message"])
@@ -120,7 +119,7 @@ def check_message_appropriate(message):
     index2=message_index.index(targetM)
     if index2==0 and index1>index2:
         message=message[index1+lenWordC+1:len(message)]
-    else if index1==0 and index2>index1:
+    elif index1==0 and index2>index1:
         message=message[index2+lenWordM+1:len(message)]
     string_final="Somone on the road advised you" + message
     return string_final

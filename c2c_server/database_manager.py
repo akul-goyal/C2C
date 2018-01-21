@@ -135,11 +135,9 @@ class Database(object):
             and (floor_time(json_package["time"])) in floor_time(nameplate["send_time"])):
                 if message_profile[nameplate["plate_num"]]==None:
                     message_profile[nameplate["plate_num"]]=[]
-                    message_profile[nameplate["plate_num"]]=
-                    message_profile[nameplate["plate_num"]].append(json_package["message"])
+                    message_profile[nameplate["plate_num"]]= message_profile[nameplate["plate_num"]].append(json_package["message"])
                 else:
-                    message_profile[nameplate["plate_num"]]=
-                    message_profile[nameplate["plate_num"]].append(json_package["message"])
+                    message_profile[nameplate["plate_num"]]= message_profile[nameplate["plate_num"]].append(json_package["message"])
 
         sys.exit()
 
