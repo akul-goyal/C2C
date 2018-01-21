@@ -228,8 +228,8 @@ class Database(object):
                                     return self.location_profile[nameplate]["plate_num"]
         else:
             for nameplate in nearby_cars:
-                if cartype in self.location_profile[nameplate]:
-                    if color in self.location_profile[nameplate]:
+                if cartype == self.location_profile[nameplate]['car_type']:
+                    if color == self.location_profile[nameplate]['car_color']:
                         return self.location_profile[nameplate]["plate_num"]
 
 
