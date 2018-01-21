@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Handler;
+import android.speech.RecognizerIntent;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -13,9 +14,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -38,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     // UI
     FrameLayout viewContainer;
     Button editInfoButton;
+    Button sendMessage;
     boolean editProfileState = false;
     TextView name;
     TextView plate;
@@ -65,6 +70,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     // Server and Memory
     ServerConnection server;
     MemoryManager memory;
+    public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
+
 
     //---Set Up-------------------------------------------------------------------------------------
     /**
@@ -132,24 +139,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onClick(View view) {
                 switchEditProfileView();
+            }
+        });
 
-                /*
-                toast("sent!");
-                setUpLocationPackageForServer();
-                server.sendLocationToServer(locationPackage);
-                */
-
-                toast("message sent");
-                setUpMessagePackage();
-                server.sendMessageToServer(messagePackage);
+        sendMessage = (Button)findViewById(R.id.activate_voice);
+        sendMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startVoiceRecognitionActivity();
             }
         });
 
         // Profile Info
         viewContainer = (FrameLayout) findViewById(R.id.profileFrame);
         setUpViewProfile();
-
     }
+
 
     // called to initially set up view profile on startup
     void setUpViewProfile() {
@@ -226,6 +231,25 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
 
+    //---Voice--------------------------------------------------------------------------------------
+
+    public void startVoiceRecognitionActivity() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                "Say 'Hey Google' to send message");
+        startActivityForResult(intent, VOICE_RECOGNITION_REQUEST_CODE);
+    }
+
+    public void onClick(View v) {
+        // TODO Auto-generated method stub
+        startVoiceRecognitionActivity();
+    }
+
+
+
+
     //---Packaging Info-----------------------------------------------------------------------------
     /**
      * Functions that prepare json objects to send to server
@@ -277,11 +301,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
      *  send_time
      *  nearby_cars
      */
-    void setUpMessagePackage() {
+    void setUpMessagePackage(String message) {
         getLocation();
         String[] userInfo = memory.getProfileInfo(this);
 
-        message = "TEST MESSAGE";
         messagePackage =  new JSONObject();
         try {
             messagePackage.put("message", message);
@@ -323,6 +346,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         locationHelper.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == VOICE_RECOGNITION_REQUEST_CODE && resultCode == RESULT_OK) {
+
+            ArrayList matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            setUpMessagePackage(matches.get(0).toString());
+            server.sendMessageToServer(messagePackage);
+
+            toast(matches.get(0).toString());
+        }
     }
 
 

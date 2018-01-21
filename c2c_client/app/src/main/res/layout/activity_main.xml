@@ -28,6 +28,15 @@
 
 
         <Button
+            android:alpha="0"
+            android:id="@+id/activate_voice"
+            android:layout_height = "200dp"
+            android:layout_width="fill_parent"
+            android:layout_centerHorizontal="true"
+            android:layout_above="@+id/editProfileButton"
+            android:text="Send Message" />
+
+        <Button
             android:id="@+id/editProfileButton"
             android:background="@color/button"
             android:text="@string/edit_button"
